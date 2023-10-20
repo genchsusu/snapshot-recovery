@@ -1,4 +1,4 @@
-# install|mount|snapshot|restore
+# install | snapshot | restore
 step: ""
 
 restore:
@@ -10,7 +10,8 @@ snapshot:
 
 install:
   volumesnapshotclass: "csi-ssd"
-  storageclass: "default"
+  # storageclass: "default"
+  storageclass: "premium-rwo"
   size: ""
 
   # gcp

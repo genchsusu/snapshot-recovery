@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.restore.name | default "jenkins" | quote }}
+  name: {{ .Values.restore.name | quote }}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -36,5 +36,5 @@ spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: {{ .Values.restore.name | default "jenkins" | quote }}
+          claimName: {{ .Values.restore.name | quote }}
 {{- end -}}
