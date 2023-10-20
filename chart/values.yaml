@@ -1,0 +1,21 @@
+# install|mount|snapshot|restore
+step: ""
+
+restore:
+  name: "jenkins"
+  # snapshot:
+
+snapshot:
+  name: "jenkins"
+
+install:
+  volumesnapshotclass: "csi-ssd"
+  storageclass: "default"
+  size: ""
+
+  # gcp
+  # csidriver: "pd.csi.storage.gke.io"
+
+  # aws
+  csidriver: "ebs.csi.aws.com"
+

@@ -1,0 +1,8 @@
+{{- if (eq .Values.step "install") -}}
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: {{ .Values.install.volumesnapshotclass | default "csi-ssd" | quote }}
+driver: {{ .Values.install.csidriver}}
+deletionPolicy: Delete
+{{- end -}}

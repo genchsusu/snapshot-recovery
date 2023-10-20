@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Default values
+NAME="default_name"
+SNAPSHOT="default_snapshot"
+
+usage() {
+    echo "Usage: $0 <command> [options]"
+    echo ""
+    echo "Commands:"
+    echo "  install"
+    echo "  snapshot"
+    echo "  restore"
+    echo ""
+    echo "Options:"
+    echo "  -n, --name      Specify the name (Default: $NAME)"
+    echo "  -s, --snapshot  Specify the snapshot name (Default: $SNAPSHOT)"
+    echo "  -h, --help      Display this help message"
+}
+
+install() {
+    # Apply k8s resources
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+    helm template $NAME ./chart --set step=install | kubectl apply -f -
+}
+
+snapshot() {
+    helm template $NAME ./chart --set step=snapshot --set snapshot.name=$NAME | kubectl apply -f -
+}
+
+get_restore_size() {
+    local snapshot_name=$1
+    kubectl get volumesnapshot $snapshot_name -o json | jq -r '.status.restoreSize'
+}
+
+restore() {
+    local restore_size=$(get_restore_size $SNAPSHOT)
+    helm template $NAME ./chart --set step=restore --set restore.snapshot=$SNAPSHOT --set restore.name=$NAME --set install.size=$restore_size | kubectl apply -f -
+}
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        install) CMD="install"; shift ;;
+        snapshot) CMD="snapshot"; shift ;;
+        restore) CMD="restore"; shift ;;
+        -n|--name) NAME="$2"; shift; shift ;;
+        -s|--snapshot) SNAPSHOT="$2"; shift; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown parameter: $1"; usage; exit 1 ;;
+    esac
+done
+
+if [ -z "$CMD" ]; then
+    echo "Error: No command provided"
+    usage
+    exit 1
+fi
+
+$CMD
