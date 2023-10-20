@@ -4,7 +4,7 @@ kind: VolumeSnapshot
 metadata:
   name: {{ .Release.Name }}-{{ now | date "20060102" }}
 spec:
-  volumeSnapshotClassName: {{ .Values.prepare.volumesnapshotclass | quote }}
+  volumeSnapshotClassName: {{ .Values.install.volumesnapshotclass | quote }}
   source:
     persistentVolumeClaimName: {{ .Values.snapshot.name | quote }}
 {{- end -}}
