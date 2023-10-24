@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # Default values
-NAME="default_name"
-SNAPSHOT="default_snapshot"
+NAME="default-name"
+SNAPSHOT="default-snapshot"
 
 usage() {
     echo "Usage: $0 <command> [options]"
     echo ""
     echo "Commands:"
     echo "  install"
+    echo "  uninstall"
     echo "  snapshot"
     echo "  restore"
     echo ""
@@ -31,6 +32,18 @@ install() {
     helm template $NAME ./chart --set step=install | kubectl apply -f -
 }
 
+uninstall() {
+    helm template $NAME ./chart --set step=install | kubectl delete -f -
+    curl -s https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/csi-snapshotter/setup-csi-snapshotter.yaml | sed 's/namespace: default/namespace: kube-system/' | kubectl delete -f -
+    curl -s https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/csi-snapshotter/rbac-external-provisioner.yaml | sed 's/namespace: default/namespace: kube-system/' | kubectl delete -f -
+    curl -s https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/csi-snapshotter/rbac-csi-snapshotter.yaml | sed 's/namespace: default/namespace: kube-system/' | kubectl delete -f -
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+}
+
 snapshot() {
     helm template $NAME ./chart --set step=snapshot --set snapshot.name=$NAME | kubectl apply -f -
 }
@@ -48,6 +61,7 @@ restore() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         install) CMD="install"; shift ;;
+        uninstall) CMD="uninstall"; shift ;;
         snapshot) CMD="snapshot"; shift ;;
         restore) CMD="restore"; shift ;;
         -n|--name) NAME="$2"; shift; shift ;;
